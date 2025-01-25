@@ -92,7 +92,7 @@
 </script>
 
 <main class="mx-auto flex max-w-screen-xl flex-col items-start gap-6 p-6">
-  <h1 class="text-lg font-medium">Simulator</h1>
+  <h1 class="text-lg font-medium">Transaction Simulator</h1>
   <p>
     This is a very simple tool to help simulate recurring transactions over a
     period of time. Simply configure the recurring transactions and watch
