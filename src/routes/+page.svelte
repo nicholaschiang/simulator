@@ -1,6 +1,12 @@
 <script lang="ts">
   import { v4 as uuid } from "uuid"
+  import { persisted } from "svelte-persisted-store"
 
+  type State = {
+    items: Item[]
+    endDate: string
+    startingBalance: string
+  }
   type Item = {
     id: string
     description: string
@@ -10,9 +16,9 @@
   }
   let now = new Date()
   let sixMonths = 6 * 30 * 24 * 60 * 60 * 1000
-  let endDate = $state(formatDate(new Date(now.valueOf() + sixMonths)))
-  let startingBalance = $state("100000")
-  let items = $state<Item[]>([
+  let initialEndDate = formatDate(new Date(now.valueOf() + sixMonths))
+  let initialStartingBalance = "100000"
+  let initialItems = [
     {
       id: uuid(),
       description: "Payday",
@@ -48,7 +54,13 @@
       everyNDays: "30",
       amount: "-20",
     },
-  ])
+  ]
+  let initialState = {
+    endDate: initialEndDate,
+    startingBalance: initialStartingBalance,
+    items: initialItems,
+  }
+  let state = persisted<State>("state", initialState)
 
   type Transaction = {
     id: string
@@ -59,10 +71,10 @@
   }
   let transactions = $derived.by(() => {
     let transactions: Transaction[] = []
-    items.forEach((item) => {
+    $state.items.forEach((item) => {
       if (item.startDate && item.everyNDays && item.amount) {
         let date = new Date(item.startDate)
-        while (date.valueOf() < new Date(endDate).valueOf()) {
+        while (date.valueOf() < new Date($state.endDate).valueOf()) {
           transactions.push({
             id: uuid(),
             itemId: item.id,
@@ -104,7 +116,7 @@
     <label class="block" for="end">End date</label>
     <input
       class="w-60 border border-neutral-200"
-      bind:value={endDate}
+      bind:value={$state.endDate}
       min={formatDate(now)}
       id="end"
       type="date"
@@ -116,7 +128,7 @@
       <label class="block" for="balance">Starting balance</label>
       <input
         class="w-60 border border-neutral-200"
-        bind:value={startingBalance}
+        bind:value={$state.startingBalance}
         id="balance"
         type="number"
       />
@@ -127,7 +139,7 @@
         {formatAmount(
           transactions.reduce(
             (total, t) => total + t.amount,
-            Number(startingBalance),
+            Number($state.startingBalance),
           ),
         )}
       </div>
@@ -145,12 +157,29 @@
       </tr>
     </thead>
     <tbody>
-      {#each items as item}
+      {#each $state.items as item, index}
         <tr>
-          <td><input bind:value={item.description} type="text" /></td>
-          <td><input bind:value={item.startDate} type="date" /></td>
-          <td><input bind:value={item.everyNDays} type="number" /></td>
-          <td><input bind:value={item.amount} type="number" /></td>
+          <td
+            ><input
+              bind:value={$state.items[index].description}
+              type="text"
+            /></td
+          >
+          <td
+            ><input
+              bind:value={$state.items[index].startDate}
+              type="date"
+            /></td
+          >
+          <td
+            ><input
+              bind:value={$state.items[index].everyNDays}
+              type="number"
+            /></td
+          >
+          <td
+            ><input bind:value={$state.items[index].amount} type="number" /></td
+          >
           <td class="text-right"
             >{formatAmount(
               transactions
@@ -165,14 +194,18 @@
 
   <button
     class="bg-blue-500 px-2 py-0.5 text-white"
-    onclick={() =>
-      items.push({
-        id: uuid(),
-        description: "",
-        startDate: "",
-        everyNDays: "",
-        amount: "",
-      })}
+    onclick={() => {
+      $state.items = [
+        ...$state.items,
+        {
+          id: uuid(),
+          description: "",
+          startDate: formatDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+          everyNDays: "30",
+          amount: "",
+        },
+      ]
+    }}
   >
     Add item
   </button>
@@ -190,8 +223,12 @@
       <tr>
         <td>{new Date().toLocaleDateString()}</td>
         <td>Starting balance</td>
-        <td class="text-right">{formatAmount(Number(startingBalance))}</td>
-        <td class="text-right">{formatAmount(Number(startingBalance))}</td>
+        <td class="text-right"
+          >{formatAmount(Number($state.startingBalance))}</td
+        >
+        <td class="text-right"
+          >{formatAmount(Number($state.startingBalance))}</td
+        >
       </tr>
       {#each transactions as transaction, index}
         <tr>
@@ -204,7 +241,7 @@
                 .slice(0, index + 1)
                 .reduce(
                   (total, t) => total + t.amount,
-                  Number(startingBalance),
+                  Number($state.startingBalance),
                 ),
             )}</td
           >
