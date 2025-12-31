@@ -2,7 +2,7 @@
 
 This is a very simple tool to help simulate recurring transactions over a period of time.
 Simply configure the recurring transactions and watch transactions appear in the table below.
-This tool simply exists because I am faster with JS than with Excel.
+This tool exists because I am faster with JS than with Excel.
 
 ![Simulator](./simulator.png)
 
